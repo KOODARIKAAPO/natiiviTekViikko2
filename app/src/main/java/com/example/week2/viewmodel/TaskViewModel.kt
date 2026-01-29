@@ -2,7 +2,7 @@ package com.example.week2.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.example.week2.model.Task
-import com.example.week2.domain.mockTasks
+import com.example.week2.model.mockTasks
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

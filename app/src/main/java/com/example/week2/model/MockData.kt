@@ -1,7 +1,5 @@
-package com.example.week2.domain
+package com.example.week2.model
 
-import com.example.week2.model.Priority
-import com.example.week2.model.Task
 import java.time.LocalDate
 
 val mockTasks: List<Task> = listOf(
