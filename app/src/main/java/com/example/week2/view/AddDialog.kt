@@ -2,27 +2,29 @@ package com.example.week2.view
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.input.KeyboardType
+import com.example.week2.model.Priority
 import com.example.week2.model.Task
 import java.time.LocalDate
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailDialog(
-    task: Task,
-    onDismiss: () -> Unit,
-    onSave: (Task) -> Unit,
-    onDelete: () -> Unit
+fun AddDialog(
+    nextId: Int,
+    onAdd: (Task) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    var title by remember { mutableStateOf(task.title) }
-    var description by remember { mutableStateOf(task.description) }
-    var dueDateText by remember { mutableStateOf(task.dueDate.toString()) }
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var dueDateText by remember { mutableStateOf(LocalDate.now().plusDays(7).toString()) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Muokkaa tehtävää") },
+        title = { Text("Lisää tehtävä") },
         text = {
             Column {
                 OutlinedTextField(
@@ -35,7 +37,7 @@ fun DetailDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description") }
+                    label = { Text("Description (optional)") }
                 )
 
                 OutlinedTextField(
@@ -54,13 +56,16 @@ fun DetailDialog(
                     if (cleanTitle.isEmpty()) return@TextButton
 
                     val due = runCatching { LocalDate.parse(dueDateText.trim()) }
-                        .getOrElse { task.dueDate }
+                        .getOrElse { LocalDate.now().plusDays(7) }
 
-                    onSave(
-                        task.copy(
+                    onAdd(
+                        Task(
+                            id = nextId,
                             title = cleanTitle,
                             description = description.trim(),
-                            dueDate = due
+                            priority = Priority.MEDIUM,
+                            dueDate = due,
+                            done = false
                         )
                     )
                 }
@@ -68,10 +73,6 @@ fun DetailDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Peruuta") }
-            TextButton(onClick = onDelete) { Text("Poista") }
-        },
-        // “Poista” erillisenä actionina:
-        // Material3 AlertDialogissa ei ole kolmatta nappia suoraan, joten tehdään se title/confirm/dismiss ulkopuolelle:
-        // helpoin: lisätään “Poista” dismissButtonin tilalle Row:na
+        }
     )
 }

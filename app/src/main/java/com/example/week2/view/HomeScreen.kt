@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,94 +17,106 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.week2.model.Priority
 import com.example.week2.model.Task
 import com.example.week2.viewmodel.TaskViewModel
-import java.time.LocalDate
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    taskViewModel: TaskViewModel = viewModel()
+    taskViewModel: TaskViewModel,
+    onGoToCalendar: () -> Unit,
+    onGoToSettings: () -> Unit
 ) {
     val tasks: List<Task> by taskViewModel.tasks.collectAsState()
-    var newTaskTitle by remember { mutableStateOf("") }
+
+    var showAddDialog by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "My Tasks",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedTextField(
-                value = newTaskTitle,
-                onValueChange = { newTaskTitle = it },
-                label = { Text("Enter task name...") },
-                modifier = Modifier.weight(1f),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Button(
-                onClick = {
-                    if (newTaskTitle.isNotBlank()) {
-                        val newId = (tasks.maxOfOrNull { it.id } ?: 0) + 1
-
-                        val newTask = Task(
-                            id = newId,
-                            title = newTaskTitle.trim(),
-                            description = "",
-                            priority = Priority.MEDIUM,
-                            dueDate = LocalDate.now().plusDays(7),
-                            done = false
-                        )
-
-                        taskViewModel.addTask(newTask)
-                        newTaskTitle = ""
-                    }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "My Tasks",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 },
-                contentPadding = PaddingValues(0.dp),
-                modifier = Modifier.size(56.dp),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
-            }
+                actions = {
+                    // Kalenteriin
+                    IconButton(onClick = onGoToCalendar) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Kalenteri"
+                        )
+                    }
+                    // Asetuksiin
+                    IconButton(onClick = onGoToSettings) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Asetukset"
+                        )
+                    }
+
+                    IconButton(onClick = { showAddDialog = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Lisää"
+                        )
+                    }
+                }
+            )
         }
+    ) { padding ->
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LazyColumn(
-            contentPadding = PaddingValues(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
         ) {
-            // ✅ Käytetään items(tasks) ilman key:tä (varma)
-            items(tasks) { task ->
-                TaskItem(
-                    task = task,
-                    onToggle = { taskViewModel.toggleDone(task.id) },
-                    onDelete = { taskViewModel.removeTask(task.id) },
-                    onOpenDetails = { selectedTask = task }
-                )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (tasks.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Ei tehtäviä.")
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(tasks) { task ->
+                        TaskItem(
+                            task = task,
+                            onToggle = { taskViewModel.toggleDone(task.id) },
+                            onDelete = { taskViewModel.removeTask(task.id) },
+                            onOpenDetails = { selectedTask = task }
+                        )
+                    }
+                }
             }
         }
     }
 
-    // ✅ DetailScreen dialogina (ei navigointia)
+    // addTask AlertDialogilla (tehtävänannon mukaan)
+    if (showAddDialog) {
+        val nextId = (tasks.maxOfOrNull { it.id } ?: 0) + 1
+        AddDialog(
+            nextId = nextId,
+            onAdd = { newTask ->
+                taskViewModel.addTask(newTask)
+                showAddDialog = false
+            },
+            onDismiss = { showAddDialog = false }
+        )
+    }
+
+    // AlertDialogilla
     selectedTask?.let { task ->
         DetailDialog(
             task = task,
@@ -168,6 +181,7 @@ private fun TaskItem(
                         color = if (task.done) Color.Gray else MaterialTheme.colorScheme.onSurface
                     )
 
+                    // Näytetään dueDate “kalenterimaisesti”
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
