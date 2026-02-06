@@ -22,7 +22,41 @@ Compose kuuntelee StateFlowta collectAsState()-funktion kautta. Eli kun StateFlo
 
 Monimutkasta
 
+---
 
+Navigointi 
 
+-Jetpack compose navigoinnissa käytetään single-activity arkkitehtuuria. Siinä eri näkymät ovat composable--funktioita. Ruudusta toiseen siirrytään routtien avulla.
+-NavHost määrittelee sovelluksen reitit ja aloitusnäkymän. NavController hallitsee navigointia (navigate()) ja popBackStack())
+-Navigaatiorakenne. 
+home -> HomeCreen
+calendar -> CalendarScreen
+settings -> SettingsScreen
+ Homesta pääsee kalenteriin: navigate("calendar")
+ Kalenterista takasin: popBackStack()
+
+ ---
+
+ Arkkitehtuuri 
+
+ Model: Task
+ ViewModel : TaskViewModel
+ View: Composable näkymät (calendarscreen, homescreen jne.)
+ HomeScreen ja CalendarScreen käyttää samaa TaskViewModelia, joka luodaan samalla tasolla kun NavHost.
+ Tila luetaan collectAsState()- kutsulla, muutokset näkyvät molemmissa näkymissä.
+
+---
+Calendar ja Add 
+
+Tehtävänlisäys ja muokkaus tehdään AlertDialogilla.
+AddDialog: “+”-painike avaa dialogin, jossa syötetään vähintään title.
+Tallenna → viewModel.addTask(...)
+Peruuta → sulkee dialogin
+DetailDialog: tehtävää painamalla avautuu muokkausdialogi.
+Tallenna → viewModel.updateTask(...)
+Poista → viewModel.removeTask(...)
+Peruuta → sulkee ilman muutoksia
+
+Kalenteri näyttää meneillään olevat taskit, käyttää titlenä deadlineä.
 
 
